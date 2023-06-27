@@ -1,34 +1,3 @@
-# Resource group
-resource "azurerm_resource_group" "rg" {
-  name     = "eastus_rg_1"
-  location = "eastus"
-}
-
-resource "azurerm_public_ip" "publicip" {
-  name                = "public-ip"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  allocation_method   = "Static"
-   sku                 = "Standard"
-}
-
-resource "azurerm_public_ip" "publicip2" {
-  name                = "public-ip2"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  allocation_method   = "Static"
-    sku                 = "Standard"
-}
-
-# Virtual Networks
-resource "azurerm_virtual_network" "vnet" {
-  name                = "eastus_vnet_1"
-  address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  # dns_servers         = ["10.0.0.4", "10.0.0.5"]
-}
-
 # Availability Set
 resource "azurerm_availability_set" "aset1" {
   name                = "availability-set1"
@@ -96,20 +65,7 @@ resource "azurerm_network_interface" "nic_vm1" {
     name                          = "eastus_nic_backend_ipconfig"
     subnet_id                     = azurerm_subnet.webtire_subnet.id
     private_ip_address_allocation = "Dynamic"
-  }
-}
-
-# # VM2 Interface Cards
-resource "azurerm_network_interface" "nic_vm2" {
-  name                = "eastus_nic_webvm_2"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-
-  ip_configuration {
-    name                          = "eastus_nic_backend_ipconfig"
-    subnet_id                     = azurerm_subnet.webtire_subnet.id
-    private_ip_address_allocation = "Dynamic"
-    # public_ip_address_id          = azurerm_public_ip.publicip2.id
+    public_ip_address_id          = azurerm_public_ip.public_ip_1.id
   }
 }
 
@@ -152,7 +108,7 @@ resource "azurerm_virtual_machine" "webvm1" {
     disable_password_authentication = false
   }
 
-    # provisioner "remote-exec" {
+  # provisioner "remote-exec" {
   #   inline = [
   #     "sudo apt-get update",
   #     "sudo apt-get install -y nginx"
@@ -171,47 +127,6 @@ resource "azurerm_virtual_machine" "webvm1" {
 
 }
 
-# Web VM2 
-resource "azurerm_virtual_machine" "webvm2" {
-  name                  = "eastus_webvm2"
-  location              = azurerm_resource_group.rg.location
-  resource_group_name   = azurerm_resource_group.rg.name
-  network_interface_ids = [azurerm_network_interface.nic_vm2.id]
-  vm_size               = "Standard_DS1_v2"
-  availability_set_id   = azurerm_availability_set.aset1.id
-
-  # Uncomment this line to delete the OS disk automatically when deleting the VM
-  delete_os_disk_on_termination = true
-
-  # Uncomment this line to delete the data disks automatically when deleting the VM
-  delete_data_disks_on_termination = true
-
-  storage_image_reference {
-    publisher = "Canonical"
-    offer     = "UbuntuServer"
-    sku       = "18.04-LTS"
-    version   = "latest"
-  }
-
-  storage_os_disk {
-    name              = "myosdisk1"
-    caching           = "ReadWrite"
-    create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
-  }
-
-  os_profile {
-    computer_name  = "hostname"
-    admin_username = "testadmin"
-    admin_password = "Password1234!"
-  }
-
-  os_profile_linux_config {
-    disable_password_authentication = false
-  }
-
-}
-
 # Web layer Internal Loadbalancer
 resource "azurerm_lb" "webtier_lb" {
   name                = "web-internal-lb"
@@ -223,9 +138,9 @@ resource "azurerm_lb" "webtier_lb" {
   frontend_ip_configuration {
     name      = "web-internal-lb-frontend"
     subnet_id = azurerm_subnet.webtire_subnet.id
-    # public_ip_address_id = azurerm_public_ip.publicip.id
+    # public_ip_address_id = azurerm_public_ip.example.id
     private_ip_address_allocation = "Static"
-    private_ip_address = "10.0.1.78" # Specify the desired private IP address
+    private_ip_address            = "10.0.1.70" # Specify the desired private IP address
   }
 }
 
@@ -265,9 +180,3 @@ resource "azurerm_network_interface_backend_address_pool_association" "pa1" {
   ip_configuration_name   = azurerm_network_interface.nic_vm1.ip_configuration[0].name
   backend_address_pool_id = azurerm_lb_backend_address_pool.webtier_backend_pool.id
 }
-
-# resource "azurerm_network_interface_backend_address_pool_association" "pa2" {
-#   network_interface_id    = azurerm_virtual_machine.webvm2.network_interface_ids[0]
-#   ip_configuration_name   = azurerm_virtual_machine.webvm2.network_interface_ids[0].ip_configuration[0].name
-#   backend_address_pool_id = azurerm_lb.webtier_lb.backend_address_pool.id
-# }
