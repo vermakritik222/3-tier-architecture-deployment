@@ -1,35 +1,16 @@
-# Locals
-locals {
-  backend_address_pool_name      = "backend-pool"
-  frontend_port_name             = "frontend-port"
-  frontend_ip_configuration_name = "frontend-ip-config"
-  http_setting_name              = "backend-http-settings"
-  listener_name                  = "http-listener"
-  request_routing_rule_name      = "routing-rule"
-  # redirect_configuration_name    = "${azurerm_virtual_network.example.name}-rdrcfg"
-}
-
-# Application gateway Subnet 
-resource "azurerm_subnet" "application_gateway_subnet" {
-  name                 = "application_gateway_subnet"
-  resource_group_name  = azurerm_resource_group.rg.name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["10.0.3.0/24"]
-}
-
 resource "azurerm_application_gateway" "app_gateway" {
-  name                = "application_gateway"
+  name                = local.application_gateway_name
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
 
   sku {
     name     = "Standard_v2"
     tier     = "Standard_v2"
-    capacity = 50
+    capacity = 1
   }
 
   gateway_ip_configuration {
-    name      = "gateway-ip-config"
+    name      = local.frontend_ip_configuration_name
     subnet_id = azurerm_subnet.application_gateway_subnet.id
   }
 
