@@ -5,7 +5,7 @@ Implemented a 3-tier architecture for a web application using Terraform on Azure
 
 ## Architecture Design
 
-![](./systemDesignDiagram.png)
+![](./systemDesignDiagram.jpg)
 
 ## How to Run 
 
